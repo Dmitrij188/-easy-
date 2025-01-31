@@ -1,0 +1,158 @@
+package pckg;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+
+public class Match3Game extends JPanel implements MouseListener {
+        private final int SIZE = 8; // Размер игрового поля (8x8)
+        private final int TILE_SIZE = 60; // Размер одной клетки (60x60 пикселей)
+        private final int[][] grid = new int[SIZE][SIZE]; // Игровое поле
+        private final Random random = new Random();
+        private int score = 0;
+
+        private int selectedX = -1, selectedY = -1;
+
+        public Match3Game() {
+            setPreferredSize(new Dimension(SIZE * TILE_SIZE, SIZE * TILE_SIZE));
+            addMouseListener(this);
+            fillBoard();
+        }
+
+        private void fillBoard() {
+            do {
+                for (int i = 0; i < SIZE; i++) {
+                    for (int j = 0; j < SIZE; j++) {
+                        grid[i][j] = random.nextInt(5) + 1;
+                    }
+                }
+            } while (findMatches()); 
+        }
+
+        private boolean findMatches() {
+            boolean found = false;
+            boolean[][] toRemove = new boolean[SIZE][SIZE];
+
+            for (int i = 0; i < SIZE; i++) {
+                for (int j = 0; j < SIZE - 2; j++) {
+                    if (grid[i][j] != 0 && grid[i][j] == grid[i][j + 1] && grid[i][j] == grid[i][j + 2]) {
+                        toRemove[i][j] = toRemove[i][j + 1] = toRemove[i][j + 2] = true;
+                        found = true;
+                    }
+                }
+            }
+
+            for (int i = 0; i < SIZE - 2; i++) {
+                for (int j = 0; j < SIZE; j++) {
+                    if (grid[i][j] != 0 && grid[i][j] == grid[i + 1][j] && grid[i][j] == grid[i + 2][j]) {
+                        toRemove[i][j] = toRemove[i + 1][j] = toRemove[i + 2][j] = true;
+                        found = true;
+                    }
+                }
+            }
+
+            if (found) {
+                for (int i = 0; i < SIZE; i++) {
+                    for (int j = 0; j < SIZE; j++) {
+                        if (toRemove[i][j]) {
+                            grid[i][j] = 0;
+                            score += 10;
+                        }
+                    }
+                }
+                collapseBoard();
+            }
+            return found;
+        }
+
+        private void collapseBoard() {
+            for (int j = 0; j < SIZE; j++) {
+                for (int i = SIZE - 1; i > 0; i--) {
+                    if (grid[i][j] == 0) {
+                        for (int k = i; k > 0; k--) {
+                            grid[k][j] = grid[k - 1][j];
+                        }
+                        grid[0][j] = random.nextInt(5) + 1;
+                    }
+                }
+            }
+
+            if (findMatches()) {
+                repaint();
+            }
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            for (int i = 0; i < SIZE; i++) {
+                for (int j = 0; j < SIZE; j++) {
+                    g.setColor(getColor(grid[i][j]));
+                    g.fillRect(j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    g.setColor(Color.BLACK);
+                    g.drawRect(j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+            
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.BOLD, 16));
+            g.drawString("Счёт: " + score, 10, SIZE * TILE_SIZE + 20);
+        }
+
+        private Color getColor(int value) {
+            return switch (value) {
+                case 1 -> Color.RED;
+                case 2 -> Color.BLUE;
+                case 3 -> Color.GREEN;
+                case 4 -> Color.ORANGE;
+                case 5 -> Color.MAGENTA;
+                default -> Color.LIGHT_GRAY;
+            };
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int x = e.getY() / TILE_SIZE;
+            int y = e.getX() / TILE_SIZE;
+
+            if (selectedX == -1 && selectedY == -1) {
+                selectedX = x;
+                selectedY = y;
+            } else {
+                if (isAdjacent(selectedX, selectedY, x, y)) {
+                    swap(selectedX, selectedY, x, y);
+                    if (!findMatches()) {
+                        swap(selectedX, selectedY, x, y); // Отменяем ход, если нет совпадений
+                    }
+                }
+                selectedX = selectedY = -1;
+            }
+            repaint();
+        }
+
+        private boolean isAdjacent(int x1, int y1, int x2, int y2) {
+            return (Math.abs(x1 - x2) == 1 && y1 == y2) || (Math.abs(y1 - y2) == 1 && x1 == x2);
+        }
+
+        private void swap(int x1, int y1, int x2, int y2) {
+            int temp = grid[x1][y1];
+            grid[x1][y1] = grid[x2][y2];
+            grid[x2][y2] = temp;
+        }
+
+        @Override public void mousePressed(MouseEvent e) {}
+        @Override public void mouseReleased(MouseEvent e) {}
+        @Override public void mouseEntered(MouseEvent e) {}
+        @Override public void mouseExited(MouseEvent e) {}
+
+        public static void main(String[] args) {
+            JFrame frame = new JFrame("Три в ряд");
+            Match3Game game = new Match3Game();
+
+            frame.add(game);
+            frame.pack();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+        }
+    }
