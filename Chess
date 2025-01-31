@@ -1,0 +1,127 @@
+package pckg;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class ChessGame extends JPanel implements MouseListener {
+    private static final int SIZE = 8;
+    private static final int TILE_SIZE = 80;
+    private ChessPiece[][] board = new ChessPiece[SIZE][SIZE];
+    private boolean whiteTurn = true;
+    private int selectedX = -1, selectedY = -1;
+
+    public ChessGame() {
+        setPreferredSize(new Dimension(SIZE * TILE_SIZE, SIZE * TILE_SIZE + 40)); // +40 пикселей для отображения хода
+        addMouseListener(this);
+        setupBoard();
+    }
+
+    private void setupBoard() {
+        for (int i = 0; i < SIZE; i++) {
+            board[1][i] = new ChessPiece("♟", false); // Чёрные пешки
+            board[6][i] = new ChessPiece("♙", true); // Белые пешки
+        }
+
+        board[0][0] = board[0][7] = new ChessPiece("♜", false); // Чёрные ладьи
+        board[0][1] = board[0][6] = new ChessPiece("♞", false); // Чёрные кони
+        board[0][2] = board[0][5] = new ChessPiece("♝", false); // Чёрные слоны
+        board[0][3] = new ChessPiece("♛", false); // Чёрный ферзь
+        board[0][4] = new ChessPiece("♚", false); // Чёрный король
+
+        board[7][0] = board[7][7] = new ChessPiece("♖", true); // Белые ладьи
+        board[7][1] = board[7][6] = new ChessPiece("♘", true); // Белые кони
+        board[7][2] = board[7][5] = new ChessPiece("♗", true); // Белые слоны
+        board[7][3] = new ChessPiece("♕", true); // Белый ферзь
+        board[7][4] = new ChessPiece("♔", true); // Белый король
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if ((i + j) % 2 == 0) {
+                    g.setColor(Color.LIGHT_GRAY);
+                } else {
+                    g.setColor(Color.DARK_GRAY);
+                }
+                g.fillRect(j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        if (selectedX != -1 && selectedY != -1) {
+            g.setColor(new Color(255, 255, 0, 128));
+            g.fillRect(selectedY * TILE_SIZE, selectedX * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 50));
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (board[i][j] != null) {
+                    g.setColor(board[i][j].isWhite ? Color.WHITE : Color.BLACK);
+                    g.drawString(board[i][j].symbol, j * TILE_SIZE + 20, i * TILE_SIZE + 60);
+                }
+            }
+        }
+
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Ход: " + (whiteTurn ? "Белые" : "Чёрные"), 10, SIZE * TILE_SIZE + 30);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        int x = e.getY() / TILE_SIZE;
+        int y = e.getX() / TILE_SIZE;
+
+        if (x >= SIZE) return; 
+
+        if (selectedX == -1) {
+            // Выбираем фигуру
+            if (board[x][y] != null && board[x][y].isWhite == whiteTurn) {
+                selectedX = x;
+                selectedY = y;
+            }
+        } else {
+            if (isValidMove(selectedX, selectedY, x, y)) {
+                board[x][y] = board[selectedX][selectedY];
+                board[selectedX][selectedY] = null;
+                whiteTurn = !whiteTurn; // Меняем очередь хода
+            }
+            selectedX = -1;
+            selectedY = -1;
+        }
+        repaint();
+    }
+
+    private boolean isValidMove(int x1, int y1, int x2, int y2) {
+        if (x1 == x2 && y1 == y2) return false; // Нельзя ходить на ту же клетку
+        return board[x2][y2] == null || board[x2][y2].isWhite != board[x1][y1].isWhite;
+    }
+
+    @Override public void mousePressed(MouseEvent e) {}
+    @Override public void mouseReleased(MouseEvent e) {}
+    @Override public void mouseEntered(MouseEvent e) {}
+    @Override public void mouseExited(MouseEvent e) {}
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Шахматы");
+        ChessGame game = new ChessGame();
+
+        frame.add(game);
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+
+    static class ChessPiece {
+        String symbol;
+        boolean isWhite;
+
+        ChessPiece(String symbol, boolean isWhite) {
+            this.symbol = symbol;
+            this.isWhite = isWhite;
+        }
+    }
+}
