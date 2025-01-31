@@ -105,11 +105,9 @@ public class SnakeGame extends JPanel implements ActionListener, KeyListener {
     }
 
     public void checkCollisions() {
-        // Проверяем столкновение со стенами
         if (x[0] < 0 || x[0] >= WIDTH || y[0] < 0 || y[0] >= HEIGHT) {
             running = false;
         }
-        // Проверяем столкновение с самой собой
         for (int i = 1; i < snakeLength; i++) {
             if (x[0] == x[i] && y[0] == y[i]) {
                 running = false;
