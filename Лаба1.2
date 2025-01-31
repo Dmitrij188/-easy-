@@ -1,0 +1,69 @@
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Data
+@AllArgsConstructor
+class User {
+    private int id;
+    private String firstName;
+    private String lastName;
+    private int age;
+    private String country;
+}
+
+public class UserProcessor {
+    public static void main(String[] args) {
+        List<User> users = Arrays.asList(
+            new User(1, "Иван", "Петров", 25, "Россия"),
+            new User(2, "Анна", "Иванова", 30, "США"),
+            new User(3, "Дмитрий", "Смирнов", 20, "Канада"),
+            new User(4, "Мария", "Васильева", 27, "Россия"),
+            new User(5, "Олег", "Сидоров", 35, "Германия"),
+            new User(6, "Екатерина", "Козлова", 40, "Франция")
+        );
+
+        System.out.println("Пользователи, отсортированные по фамилии:");
+        sortByLastName(users).forEach(System.out::println);
+
+        System.out.println("\nПользователи, отсортированные по возрасту:");
+        sortByAge(users).forEach(System.out::println);
+
+        System.out.println("\nВсе пользователи старше 7 лет? " + allUsersOlderThanSeven(users));
+
+        System.out.println("\nСредний возраст пользователей: " + getAverageAge(users));
+
+        System.out.println("\nКоличество разных стран проживания: " + countUniqueCountries(users));
+    }
+
+    public static List<User> sortByLastName(List<User> users) {
+        return users.stream()
+                .sorted(Comparator.comparing(User::getLastName))
+                .collect(Collectors.toList());
+    }
+
+    public static List<User> sortByAge(List<User> users) {
+        return users.stream()
+                .sorted(Comparator.comparingInt(User::getAge))
+                .collect(Collectors.toList());
+    }
+
+    public static boolean allUsersOlderThanSeven(List<User> users) {
+        return users.stream().allMatch(user -> user.getAge() > 7);
+    }
+
+    public static double getAverageAge(List<User> users) {
+        return users.stream()
+                .mapToInt(User::getAge)
+                .average()
+                .orElse(0.0);
+    }
+
+    public static long countUniqueCountries(List<User> users) {
+        return users.stream()
+                .map(User::getCountry)
+                .distinct()
+                .count();
+    }
+}
