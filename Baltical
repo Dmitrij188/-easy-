@@ -1,0 +1,48 @@
+import pandas as pd
+import joblib
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
+
+downtime_df = pd.read_csv('data2/SKELER2.csv')  # Файл с простоями
+performance_df = pd.read_csv('data2/DPbezMin.csv')    # Файл с производительностью
+
+print("Колонки в performance_df:", performance_df.columns)
+
+# Преобразуем колонки с датой и временем
+downtime_df['dt Start Local'] = pd.to_datetime(downtime_df['dt Start Local'])
+performance_df['dt Start Local'] = pd.to_datetime(performance_df['dt Start Local'])
+
+merged_df = pd.merge(downtime_df, performance_df, on='dt Start Local', how='left')
+
+print("Объединённые данные:")
+print(merged_df.head())
+
+label_encoder_reason = LabelEncoder()
+label_encoder_performance = LabelEncoder()
+
+merged_df['sz Raw Reason Encoded'] = label_encoder_reason.fit_transform(merged_df['sz Raw Reason_x'])
+merged_df['Performance Encoded'] = label_encoder_performance.fit_transform(merged_df['sz Raw Reason_y'])
+
+X = merged_df[['min', 'Performance Encoded']]  # Используем длительность простоя и уровень производительности
+y = merged_df['sz Raw Reason Encoded']         # Целевая переменная
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Точность модели: {accuracy:.2f}")
+
+f1 = f1_score(y_test, y_pred, average='weighted')  # Используем 'weighted' для многоклассовой классификации
+print(f"F1-мера модели: {f1:.2f}")
+
+importances = model.feature_importances_
+for feature, importance in zip(X.columns, importances):
+   print(f"{feature}: {importance:.4f}")
+
